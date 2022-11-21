@@ -21,9 +21,12 @@ import random
 class AutomataCelular:
     
     def __init__(self,cells_side:int) -> None:
-        
-        # lado del cuadrado de pixeles
+        # lado dado en celdas
         self.CellsSide=cells_side
+        # contador celulas vivas
+        self.StatusCellsLive=0
+        # contador de celulas muertas
+        self.StatusCellsDead=self.CellsSide*self.CellsSide
         #  matriz de puros ceros
         self.Matriz=np.zeros((self.CellsSide,self.CellsSide))
         self.MatrizAux=np.zeros((self.CellsSide,self.CellsSide))
@@ -117,22 +120,6 @@ class AutomataCelular:
         for x in range(0,self.CellsSide):
             for y in range(0,self.CellsSide):
                 self.Matriz[x][y]=random.choice([0,1])
-                
-    def periodica1(self):
-        
-        self.Matriz[3][2]=1
-        self.Matriz[3][3]=1
-        self.Matriz[3][4]=1
     
     def __str__(self) -> str:
         return self.Matriz.__str__()+"\n"
-
-
-# AC=AutomataCelular(7)
-# # AC.initialRandom()
-# AC.periodica1()
-# AC.next()
-# AC.next()
-# AC.next()
-# AC.next()
-# AC.next()

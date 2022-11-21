@@ -1,6 +1,7 @@
 from tkinter import Tk,Label,Frame,Entry,Button,Scale,Checkbutton
 from MatrixWindow import *
 from AutomataCelular import *
+import threading
 
 """
     La siguiente clase no es una ventana raiz, es un frame.
@@ -18,10 +19,11 @@ class MyFrame(Frame):
         self.pack()
         self.createWidgets()
         
-        # MW=MatrixWindow(500,500)
-        # MW.mainloop(110,0.5)
+        # Variables
+        self.SizeMatrix=100
         
-        
+        self.Th_Window=threading.Thread()
+        self.Th_Matrix=threading.Thread()
         
     
     # Aqui se crean todos los widgets del frame
@@ -53,15 +55,16 @@ class MyFrame(Frame):
         self.btn2=Button(self,text="Cargar Configuracion",command=self.loadConfig)
         self.btn2.place(x=150,y=400,width=130,height=30)
         
-        self.btn3=Button(self,text="Correr simulacion")
+        self.btn3=Button(self,text="Correr simulacion",command=self.runSimulation)
         self.btn3.place(x=10,y=450,width=400,height=30)
         
-        self.cbtn1=Checkbutton(self,text="Color")
+        self.cbtn1=Checkbutton(self,text="Color",)
         self.cbtn1.place(x=400,y=10,width=100,height=30)
     
     def setLabelScale(self,v):
         # automaticamente obtiene el valor del Scale
-        cad="Tamaño cuadro: "+str(v)+" X "+str(v)
+        cad="Tamaño cuadro: "+v+" X "+v
+        self.SizeMatrix=v
         self.lbl1.config(text=cad)
         
     def saveConfig(self):
@@ -71,8 +74,12 @@ class MyFrame(Frame):
         pass
     
     def runSimulation(self):
+        
+        AC=AutomataCelular(int(self.SizeMatrix))
+        AC.initialRandom()
+        
         MW=MatrixWindow(500,500)
-        MW.mainloop(110,0.5)
+        MW.mainloop(AC,0.5)
 
 root=Tk()
 root.title("Ejemplo de place")
