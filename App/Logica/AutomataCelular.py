@@ -24,18 +24,49 @@ class AutomataCelular:
         # lado dado en celdas
         self.CellsSide=cells_side
         # contador celulas vivas
-        self.StatusCellsLive=0
+        self._StatusCellsLive=0
         # contador de celulas muertas
-        self.StatusCellsDead=self.CellsSide*self.CellsSide
+        self._StatusCellsDead=self.CellsSide*self.CellsSide
         #  matriz de puros ceros
-        self.Matriz=np.zeros((self.CellsSide,self.CellsSide))
-        self.MatrizAux=np.zeros((self.CellsSide,self.CellsSide))
+        self._Matriz=np.zeros((self.CellsSide,self.CellsSide))
+        self._MatrizAux=None
         
+    #------------------Matriz-----------------------
+    @property
+    def Matriz(self):
+        """numpy.ndarray: contiene los 0s y 1s"""
+        return self._Matriz
+
+    @Matriz.setter
+    def Matriz(self, matrix_array:np.ndarray):
+        self._Matriz = matrix_array
+        self.CellsSide= matrix_array.shape[0]
+        self._MatrizAux=np.zeros((self.CellsSide,self.CellsSide))
+        
+    @Matriz.deleter
+    def Matriz(self):
+        del self._Matriz
+    #----------------------------------------------------
+    
+    @property
+    def StatusCellsLive(self):
+        """lado en celdas de la matriz"""
+        return self._StatusCellsLive
+    
+    @property
+    def StatusCellsDead(self):
+        """lado en celdas de la matriz"""
+        return self._StatusCellsDead
+    
+    @property
+    def MatrizAux(self):
+        """numpy.ndarray: contiene los 0s y 1s auxiliares"""
+        return self._MatrizAux
+    
     def next(self):
         self.evaluate()
         
-    def evaluate(self):    
-        
+    def evaluate(self):
         
         # celula y sus vecindades
         #    +---+---+---+
@@ -120,6 +151,10 @@ class AutomataCelular:
         for x in range(0,self.CellsSide):
             for y in range(0,self.CellsSide):
                 self.Matriz[x][y]=random.choice([0,1])
+    
+    def initialZeros(self):
+        self._Matriz=np.zeros((self.CellsSide,self.CellsSide))
+        self._MatrizAux=np.zeros((self.CellsSide,self.CellsSide))
     
     def __str__(self) -> str:
         return self.Matriz.__str__()+"\n"

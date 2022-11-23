@@ -1,7 +1,10 @@
-from tkinter import Tk,Label,Frame,Entry,Button,Scale,Checkbutton
-from MatrixWindow import *
-from AutomataCelular import *
-import threading
+import copy
+from time import sleep
+import numpy as np
+from tkinter import Tk, Frame, filedialog
+from Logica.AutomataCelular import AutomataCelular
+from MyFrames.MatrixCanvas import MatrixCanvas
+from MyFrames.Controllers import Controllers
 
 """
     La siguiente clase no es una ventana raiz, es un frame.
@@ -10,78 +13,109 @@ import threading
     
     Al instanciar esta clase se debe de mandar la ventana raiz o el contenedor padre.
 """
-class MyFrame(Frame):
+class Window(Frame):
     
     def __init__(self,master,width:int,height:int):
         # Constructor de Frame()
         super().__init__(master,width=width,height=height)
         # empaquetando elementos dentro de su ventana contenedora
-        self.pack()
+        self.Centinela=False
+        self.controllers=Controllers(self)
         self.createWidgets()
+        self.pack()
         
-        # Variables
-        self.SizeMatrix=100
+        # Instanciando el automata,
+        self.AC=AutomataCelular(self.controllers.SizeMatrix)
+    
+    #------------------MatrixArray-----------------------
+    @property
+    def Centinela(self):
+        """numpy.ndarray: contiene los 0s y 1s"""
+        return self._Centinela
+
+    @Centinela.setter
+    def Centinela(self, centinela:bool):
+        self._Centinela = centinela
+        print("Valor del centinela:",self._Centinela)
         
-        self.Th_Window=threading.Thread()
-        self.Th_Matrix=threading.Thread()
-        
+    @Centinela.deleter
+    def Centinela(self):
+        del self._Centinela
+    #----------------------------------------------------
     
     # Aqui se crean todos los widgets del frame
     def createWidgets(self):
-        self.lbl1=Label(self,text="Desliza...")
-        self.lbl1.place(x=10,y=10,width=250,height=30)
+        # area de botones y sus controladores
+        self.controllers.btn_run_simulation.config(command=self.runSimulation)
+        self.controllers.btn_load_conf.config(command=self.loadConfig)
+        self.controllers.btn_pause.config(command=self.pauseSimulation)
+        self.controllers.btn_save_conf.config(command=self.saveConfig)
+        self.controllers.btn_reset.config(command=self.resetSimulation)
+        self.controllers.btn_density_graph.config(command=self.showDensityGraphs)
+        self.controllers.place(relx=0.02,rely=0.02)
         
-        self.scl1=Scale(self,orient="horizontal",command=self.setLabelScale,from_=500,to=5000,
-                        tickinterval=100,resolution=0)
-        self.scl1.place(x=10,y=40,width=400,height=40)
-
-        self.lbl2=Label(self,text="No. generaciones:")
-        self.lbl2.place(x=300,y=400,width=100,height=20)
-        
-        self.lbl3=Label(self,text="No. celulas:")
-        self.lbl3.place(x=300,y=420,width=100,height=20)
-
-     
-
-        # self.lbl3=Label(self,text="Tercer numero", bg="yellow")
-        # self.lbl3.place(x=10,y=100,width=100,height=30)
-
-        # self.txt3=Entry(self, bg="pink")
-        # self.txt3.place(x=120,y=100,width=100,height=30)
-
-        self.btn1=Button(self,text="Guardar Configuracion",command=self.saveConfig)
-        self.btn1.place(x=10,y=400,width=130,height=30)
-        
-        self.btn2=Button(self,text="Cargar Configuracion",command=self.loadConfig)
-        self.btn2.place(x=150,y=400,width=130,height=30)
-        
-        self.btn3=Button(self,text="Correr simulacion",command=self.runSimulation)
-        self.btn3.place(x=10,y=450,width=400,height=30)
-        
-        self.cbtn1=Checkbutton(self,text="Color",)
-        self.cbtn1.place(x=400,y=10,width=100,height=30)
+        # se define el tamaño estatico del canvas en pixeles y la posicion
+        self.matrix_canvas=MatrixCanvas(self,600)
+        self.matrix_canvas.place(relx=0.5,rely=0.01)
     
-    def setLabelScale(self,v):
-        # automaticamente obtiene el valor del Scale
-        cad="Tamaño cuadro: "+v+" X "+v
-        self.SizeMatrix=v
-        self.lbl1.config(text=cad)
+    def showDensityGraphs(self):
+        pass
+    
+    def resetSimulation(self):
+        # Se borra la configuracion actual del automata
+        self.Centinela=False
+        self.AC.initialZeros()
+        self.matrix_canvas.MatrixArray=self.AC.Matriz
+        self.matrix_canvas.drawMatrix()
+        self.matrix_canvas.update()
+        
+    
+    def pauseSimulation(self):
+        # Se pausa la simulacion
+        self.Centinela=False
+        
         
     def saveConfig(self):
-        pass
+        self.Centinela=False
+        dirname_matrix_txt=filedialog.asksaveasfile()
+        self.Centinela=True
+        
     
     def loadConfig(self):
-        pass
+        # se rompe el proceso del automata 
+        self.Centinela=False
+        # se busca el archivo del automata
+        dirname_matrix_txt=filedialog.askopenfile()
+        
+        self.controllers.lbl_path_file_load.config(text=dirname_matrix_txt)
+        
+        # se carga la matriz en el canvas para su visualizacion
+        self.AC.Matriz=np.loadtxt(dirname_matrix_txt,dtype=int)
+        self.matrix_canvas.MatrixArray=self.AC.Matriz
+        self.matrix_canvas.drawMatrix()
+        self.matrix_canvas.update()
+        
+        # Se continua con proceso del automata
+        self.Centinela=True
     
     def runSimulation(self):
+        # se tomara la matriz que este cargada en el automata
         
-        AC=AutomataCelular(int(self.SizeMatrix))
-        AC.initialRandom()
-        
-        MW=MatrixWindow(500,500)
-        MW.mainloop(AC,0.5)
+        while self.Centinela:
+            # esta linea cambia la matriz del canvas
+            self.matrix_canvas.MatrixArray=self.AC.Matriz
+            # se actualiza el canvas y de dibujan las formas
+            self.matrix_canvas.drawMatrix()
+            # se actualiza el frame del canvas
+            self.matrix_canvas.update()
+            # se pasa al siguiente estado del automata
+            self.AC.next()
+            # time
+            
+            sleep(self.controllers.SpeedSim)
+
 
 root=Tk()
-root.title("Ejemplo de place")
-app=MyFrame(root,500,500)
+root.title("Ventana Principal")
+app=Window(root,1300,700)
 app.mainloop()
