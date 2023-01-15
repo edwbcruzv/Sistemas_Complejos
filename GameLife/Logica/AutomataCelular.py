@@ -25,7 +25,7 @@ class AutomataCelular:
     def Matriz(self, matrix_array:np.ndarray):
         self.__Matriz = matrix_array
         self.CellsSide= matrix_array.shape[0]
-        self._MatrizAux=np.zeros((self.CellsSide,self.CellsSide),dtype=int)
+        # self._MatrizAux=np.zeros((self.CellsSide,self.CellsSide),dtype=int)
         
     @Matriz.deleter
     def Matriz(self):
@@ -46,9 +46,20 @@ class AutomataCelular:
     def MatrizAux(self):
         """numpy.ndarray: contiene los 0s y 1s auxiliares"""
         return self._MatrizAux
+    
+    def setShape(self,cells_side:int):
+        self.CellsSide= cells_side
         
     def evaluate(self,border:int=0):
         self._StatusCellsLive=0
+        self._MatrizAux=np.zeros((self.CellsSide,self.CellsSide),dtype=int)
+        bandera_toggle=False
+        
+        if self.CellsSide>self.Matriz.shape[0]:
+            # si el tamaño aumento
+            self.CellsSide=self.Matriz.shape[0]
+            bandera_toggle=True
+            
         for f in range(0,self.CellsSide):
             for c in range(0,self.CellsSide):
                 if border==0:
@@ -80,6 +91,10 @@ class AutomataCelular:
             
         # Cambio de estado del automata 
         self.Matriz=self.MatrizAux
+        
+        if bandera_toggle:
+            self.CellsSide=self.Matriz.shape[0]
+            
                 
     
     def Border0(self,f:int,c:int)->int:
@@ -235,17 +250,17 @@ class AutomataCelular:
     
     def initialRandom(self,cells_side:int=None):
         if cells_side!=None:
-            self.CellsSide==cells_side
+            self.CellsSide=cells_side
         self._StatusCellsLive=0
         self.Matriz=np.random.randint(2,size=(self.CellsSide,self.CellsSide))
-        self._MatrizAux=np.zeros((self.CellsSide,self.CellsSide),dtype=int)       
+        # self._MatrizAux=np.zeros((self.CellsSide,self.CellsSide),dtype=int)
     
     def initialZeros(self,cells_side:int=None):
         if cells_side!=None:
-            self.CellsSide==cells_side
+            self.CellsSide=cells_side
         self._StatusCellsLive=0
         self.Matriz=np.zeros((self.CellsSide,self.CellsSide),dtype=int)
-        self._MatrizAux=np.zeros((self.CellsSide,self.CellsSide),dtype=int)
+        # self._MatrizAux=np.zeros((self.CellsSide,self.CellsSide),dtype=int)
     
     def __str__(self) -> str:
         return self.Matriz.__str__()+"\n"

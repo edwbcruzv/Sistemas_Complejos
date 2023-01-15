@@ -1,9 +1,11 @@
 from time import sleep
 import numpy as np
 from tkinter import Tk, Frame, filedialog
+from Utils.Grafica import Grafica
 from Logica.AutomataCelular import AutomataCelular
 from MyFrames.MatrixCanvas import MatrixCanvas
 from MyFrames.Controllers import Controllers
+import matplotlib.pyplot as plt
 
 """
     La siguiente clase no es una ventana raiz, es un frame.
@@ -24,8 +26,13 @@ class Window(Frame):
         self.createWidgets()
         self.pack()
         
+        self.x=[]
+        self.y=[]
+        
         # Instanciando el automata,
-        self.AC=AutomataCelular(self.controllers.SizeMatrix)
+        self.SpeedSim=0.001
+        self.SizeMatrix=10
+        self.AC=AutomataCelular(10)
         self.clearSimulation()
     
     
@@ -37,27 +44,49 @@ class Window(Frame):
         self.controllers.btn_pause.config(command=self.pauseSimulation)
         self.controllers.btn_save_conf.config(command=self.saveConfig)
         self.controllers.btn_reset.config(command=self.randomDensity)
-        self.controllers.btn_density_graph.config(command=self.showDensityGraphs)
         self.controllers.btn_clear.config(command=self.clearSimulation)
+        self.controllers.scale_speed_sim.config(command=self.setLabelScaleSpeedSim,from_=0.001,to=5,
+                        tickinterval=0.001,resolution=0.001)
+        self.controllers.scale_size_matrix.config(command=self.setLabelScaleSizeMatrix,from_=10,to=5000,
+                        tickinterval=10,resolution=10)
         
         # Posicion de los controles en la ventana principal
-        self.controllers.place(relx=0.02,rely=0.02)
+        self.controllers.place(relx=0.02,rely=0.01)
         
         # se define el tamaño estatico del canvas en pixeles y la posicion
         self.matrix_canvas=MatrixCanvas(self,650)
-        self.matrix_canvas.place(relx=0.4,rely=0.01)
+        self.matrix_canvas.place(relx=0.5,rely=0.01)
+        # Grafica
+        self.graph=Grafica(self,100,100)
+        self.graph.createGraph(7,3.5)
+        # self.graph.updateGraph([0,1,2,3],[0,5,7,2])
+        self.graph.place(relx=0.02,rely=0.46)
         
-    def showDensityGraphs(self):
-        pass
+    def setLabelScaleSizeMatrix(self,v):
+        # automaticamente obtiene el valor del Scale
+        self.Centinela=False
+        cad="Tamaño cuadro: "+v+" X "+v
+        self.SizeMatrix=int(v)
+        self.AC.setShape(int(v))
+        self.controllers.lbl1.config(text=cad)
+    
+    def setLabelScaleSpeedSim(self,v):
+        # automaticamente obtiene el valor del Scale
+        self.Centinela=False
+        cad="Velocidad simulacion: "+v
+        self.SpeedSim=float(v)
+        self.controllers.lbl4.config(text=cad)
     
     def clearSimulation(self):
         # Se borra la configuracion actual del automata
         self.Centinela=False
         # Asignando el tamaño definido anteriormente
-        self.AC.initialZeros(self.controllers.SizeMatrix)
+        self.AC.initialZeros(self.SizeMatrix)
         self.matrix_canvas.drawMatrix(self.controllers.InverterColorCells.get(),self.AC.Matriz)
         self.matrix_canvas.update()
         self.ContGeneration=0
+        self.x=[]
+        self.y=[]
         self.controllers.lbl_num_generations.config(text="No. generaciones:"+str(self.ContGeneration))
         self.controllers.lbl_num_cells.config(text="No. celulas:"+str(self.AC.StatusCellsLive))
     
@@ -65,10 +94,12 @@ class Window(Frame):
         # Se borra la configuracion actual del automata
         self.Centinela=False
         # Asignando el tamaño definido anteriormente
-        self.AC.initialRandom(self.controllers.SizeMatrix)
+        self.AC.initialRandom(self.SizeMatrix)
         self.matrix_canvas.drawMatrix(self.controllers.InverterColorCells.get(),self.AC.Matriz)
         self.matrix_canvas.update()
         self.ContGeneration=0
+        self.x=[]
+        self.y=[]
         self.controllers.lbl_num_generations.config(text="No. generaciones:"+str(self.ContGeneration))
         self.controllers.lbl_num_cells.config(text="No. celulas:"+str(self.AC.StatusCellsLive))
         
@@ -111,16 +142,22 @@ class Window(Frame):
         
         self.Centinela=True
         while self.Centinela:
+            self.ContGeneration=self.ContGeneration+1
             self.controllers.lbl_num_generations.config(text="No. generaciones:"+str(self.ContGeneration))
             self.controllers.lbl_num_cells.config(text="No. celulas:"+str(self.AC.StatusCellsLive))
+            self.x.append(self.ContGeneration)
+            self.y.append(self.AC.StatusCellsLive)
             
-            self.ContGeneration=self.ContGeneration+1
+            self.graph.updateGraph(self.x,self.y)
+            # self.graph.updateGraph([0,1,2,3],[0,5,7,2])
+            
+            # self.graph.update()
             # se actualiza el canvas y de dibujan las formas
-            self.matrix_canvas.drawMatrix(self.controllers.InverterColorCells.get(),self.AC.Matriz) ##posible problema de tardanza
+            self.matrix_canvas.drawMatrix(self.controllers.InverterColorCells.get(),self.AC.Matriz)
             # se actualiza el frame del canvas
             self.matrix_canvas.update()
             
-            sleep(self.controllers.SpeedSim)
+            sleep(self.SpeedSim)
             # se pasa al siguiente estado del automata
             self.AC.evaluate(self.controllers.OptionBorder.get())
             
@@ -128,5 +165,5 @@ class Window(Frame):
 
 root=Tk()
 root.title("Ventana Principal")
-app=Window(root,1200,700)
+app=Window(root,1500,750)
 app.mainloop()

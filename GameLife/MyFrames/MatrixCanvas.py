@@ -117,3 +117,14 @@ class MatrixCanvas(Frame):
 # app=MatrixCanvas(root,500)
 # app.drawMatrix()
 # app.mainloop()
+
+# s.bind("<MouseWheel>", s.do_zoom)
+#         s.bind('<ButtonPress-3>', lambda event: s.scan_mark(event.x, event.y))
+#         s.bind("<B3-Motion>", lambda event: s.scan_dragto(event.x, event.y, gain=1))   
+#         s.bind('<space>', s.pausar)
+
+#     def do_zoom(s, event):
+#         x = s.canvasx(event.x)
+#         y = s.canvasy(event.y)
+#         s.factor = 1.001 ** event.delta
+#         s.scale(ALL, x, y, s.factor, s.factor)
