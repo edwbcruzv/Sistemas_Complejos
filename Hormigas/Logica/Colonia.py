@@ -28,7 +28,7 @@ class Colonia(Frame):
         self.__WSoldado=35
         
         # Definiendo el espacio que contendra la colonia en celdas
-        self.ColoniaMatrix=np.zeros((cells_side,cells_side),dtype=int)
+        self.RastrosHormigasMatrix=np.zeros((cells_side,cells_side),dtype=int)
         self.__Hormigas=list()
         self.__AntsLive=len(self.__Hormigas)
         
@@ -195,59 +195,78 @@ class Colonia(Frame):
             self.pausa = False
             self.boton_pausa.config(text="Pausa")
             
-    def drawMatrix(self):
+    def drawMatrix(self,active_rastro:bool=True):
         # Se calcula el lado del la celula 
         # lado_celula=lado_canvas/num_celulas
         self.SideCell=self.SizeCanvas/self.CellsSide
-        # self.SideCell=1
         # limpia la memoria, esto para evitar que se tarde y trabe el programa
         self.cv1.delete("all")
+        try:
+            if active_rastro:
+                self._drawRastroAnts()
+            self._drawHeadsAnts()
+        except :
+            print("algo paso")
+        
+    def _drawRastroAnts(self):
+        
         # c->columna: indicara la coodernada del eje X
         # f->fila: indicara la coordenada del eje Y
         # print(self.CellsSide)
         for f in range(0,self.CellsSide):
             for c in range(0,self.CellsSide):
-                if self.ColoniaMatrix[f][c]==0:
+                if self.RastrosHormigasMatrix[f][c]==0:
+                    # se dibuja la celula muerta
                     self._drawCell(c*self.SideCell,f*self.SideCell,(c*self.SideCell)+self.SideCell,(f*self.SideCell)+self.SideCell,WHITE)
                 else:
-                    color=self.Hormigas[self.Hormigas.index(int(self.ColoniaMatrix[f][c]))].Color
+                    # se dibuja el rastro vivo
+                    id_aux=int(self.RastrosHormigasMatrix[f][c])
+                    h_aux=self.Hormigas[self.Hormigas.index(id_aux)]
+                    color=h_aux.Color
                     self._drawCell(c*self.SideCell,f*self.SideCell,(c*self.SideCell)+self.SideCell,(f*self.SideCell)+self.SideCell,color)
+        
         self.cv1.pack() # no quitar esta linea
-    
+        
     def _drawCell(self,x0,y0,x1,y1,color):
         self.cv1.create_rectangle(x0,y0,x1,y1,fill=color,outline=color)
+        
+    def _drawHeadsAnts(self):
+        
+        for h in self.Hormigas:
+            if h.Live>=80:
+                self.deleteAnt(h.ID)
+                continue
+            color=h.Color
+            f=h.X_pos
+            c=h.Y_pos
+            self.cv1.create_rectangle(c*self.SideCell,f*self.SideCell,(c*self.SideCell)+self.SideCell,(f*self.SideCell)+self.SideCell,fill=color,outline=BLACK)
+            self.cv1.create_line(c*self.SideCell,f*self.SideCell,(c*self.SideCell)+self.SideCell,(f*self.SideCell)+self.SideCell)
+            self.cv1.create_line(c*self.SideCell,(f*self.SideCell)+self.SideCell,(c*self.SideCell)+self.SideCell,f*self.SideCell)
+            
+        self.cv1.pack() # no quitar esta linea
         
     def _alterate(self,event):
         var=(self.SizeCanvas/self.CellsSide)
         c=floor(event.x/var)
         f=floor(event.y/var)
-        
-        if self.ColoniaMatrix[f][c]==0:
-            h=self._RandomAnt(c,f)
-            self.Hormigas.append(h)
-            self.ColoniaMatrix[f][c]=h.ID
-            self._drawCell(c*self.SideCell,f*self.SideCell,(c*self.SideCell)+self.SideCell,(f*self.SideCell)+self.SideCell,h.Color)
-        else:
-            self.Hormigas.remove(int(self.ColoniaMatrix[f][c]))
-            self.ColoniaMatrix[f][c]=0
-            self._drawCell(c*self.SideCell,f*self.SideCell,(c*self.SideCell)+self.SideCell,(f*self.SideCell)+self.SideCell,WHITE)
-        
+        try:
+            if self.RastrosHormigasMatrix[f][c]==0:
+                h=self._RandomAnt(f,c)
+                self.Hormigas.append(h)
+                self._drawHeadsAnts()
+            else:
+                self.deleteAnt(int(self.RastrosHormigasMatrix[f][c]))
+                self._drawHeadsAnts()
+        except:
+            print("paso en alterar")
             
     def _addRandomAnt(self):
-        """ Se genera la hormiga con coordenadas aleatorias y ademas se agregaran ala lista
-        """
         self.Hormigas.append(self._RandomAnt())
-    
-
+        
     def _RandomAnt(self,x:int=None,y:int=None):
-        """ Regresa una Hormiga respendando los pesos ya establecido.
-            Se pueden escojer las coordenada o se eligen de forma aleatoria.
-        Args:
-            x (int, optional): Coordenada eje x. Defaults to None.
-            y (int, optional): Coordenada eje y. Defaults to None.
-        """
         colores=([self.__ColorReina,self.__ColorTrabajadora,self.__ColorReproductora,self.__ColorSoldado])
         pesos=[self.WReina,self.WTrabajadora,self.WReproductora,self.WSoldado]
+        # print(pesos)
         
         orientacion=random.choice(['N','E','O','S'])
         if x==None or y==None:
@@ -256,47 +275,55 @@ class Colonia(Frame):
         return Hormiga(random.choices(colores,weights=pesos),
                                      orientacion,
                                      [x,y])
-    
-    def renderHeadAnts(self):
         
-        for h in self.Hormigas:
-            self.ColoniaMatrix[h.X_pos][h.Y_pos]=h.ID
-        print(self)
+        # Se elimina la hormiga al tener el ID
+    def deleteAnt(self,id_ant):
+        # se elimina la hormiga de la lista
+        h_aux=self.Hormigas[self.Hormigas.index(id_ant)]
+        self.Hormigas.remove(h_aux)
+        # se limpia toda la matriz de rastros
+        for f in range(0,self.CellsSide):
+            for c in range(0,self.CellsSide):
+                if self.RastrosHormigasMatrix[f][c]==id_ant:
+                    self.RastrosHormigasMatrix[f][c]=0
+                    
+    def distribution(self,porcent:int):
+        
+        for f in range(0,self.CellsSide):
+            for c in range(0,self.CellsSide):
+                if random.uniform(0,100)<porcent:
+                    self.Hormigas.append(self._RandomAnt(f,c))
+        
+        
         
     def evaluate(self,border:int=0):
-        """ Aplica las reglas del la Hormiga de Langton, dependiendo del borde elejido. 
-
-        Args:
-            border (int, optional): 1 para forma toroidal. Defaults to 0.
-        """
+        # print(self.CellsSide)
+        # print(self.RastrosHormigasMatrix.shape)
+        # self.rules()
         
         for h in self.Hormigas:
-            if self.ColoniaMatrix[h.X_pos][h.Y_pos]==0:
-                print("leyendo",h.X_pos,h.Y_pos, "orientacion",h.Orientation)
                 # La Celula esta Muerta.
+            if self.RastrosHormigasMatrix[h.X_pos][h.Y_pos]==0:
                 # Gira 90 grados a la derecha.
                 h.rotate90Right()
                 # cambia la célula actual con su ID 
-                self.ColoniaMatrix[h.X_pos][h.Y_pos]=h.ID
+                self.RastrosHormigasMatrix[h.X_pos][h.Y_pos]=h.ID
                 # avanza una célula adelante
                 h.moveForward()
-                print("nueva",h.X_pos,h.Y_pos, "orientacion",h.Orientation)
-            else:
-                # La celula esta viva (hay un rastro)
+            else:# La celula esta viva (hay un rastro)
                 # Gira 90 grados a la izquierda
                 h.rotate90Left()
                 # cambia célula actual a una célula muerta
-                self.ColoniaMatrix[h.X_pos][h.Y_pos]=0
+                self.RastrosHormigasMatrix[h.X_pos][h.Y_pos]=0
                 # avanza una célula adelante
                 h.moveForward()
             
             # condiciones de frontera
             if (border==0) and (h.X_pos==-1 or h.Y_pos==-1 or h.X_pos==self.CellsSide or h.Y_pos==self.CellsSide): # reflectora
-                if border==0:
-                    h.rotate180()
-                    h.moveForward()
+                h.rotate180()
+                h.moveForward()
+                # print("Peligro 0!!!")
             elif (border==1): # Toroide
-                
                 if h.X_pos==-1:
                     h.X_pos=self.CellsSide-1
                 elif h.Y_pos==-1:
@@ -305,7 +332,20 @@ class Colonia(Frame):
                     h.X_pos=0
                 elif h.Y_pos==self.CellsSide:
                     h.Y_pos=0
+                # print("Peligro 1!!!")
+    
+    def rules(self):
+        
+        self.EvaluateMatrix=np.zeros((self.CellsSide,self.CellsSide),dtype=int)
+        
+        for h in self.Hormigas:
+            self.EvaluateMatrix[h.X_pos][h.Y_pos]=h.ID
+            
+        for f in range(0,self.CellsSide):
+            for c in range(0,self.CellsSide):
+                pass
+                
                     
     def __str__(self) -> str:
-        return self.ColoniaMatrix.__str__()+"\n"
+        return self.RastrosHormigasMatrix.__str__()+"\n"
     

@@ -41,6 +41,8 @@ class Hormiga:
         
         self.__Color=args[0]
         self.__ID=self.generateID()
+        self.__Live=0
+        self.__Evaluate=False
     
     @classmethod
     def generateID(cls):
@@ -78,6 +80,13 @@ class Hormiga:
     def ID(self):
         # Documentacion de ID 
         return self.__ID
+    #------------------------------------
+    
+    #------------------------------------
+    @property
+    def Live(self):
+        # Documentacion de Live 
+        return self.__Live
     #------------------------------------
     
     #------------------------------------
@@ -124,7 +133,26 @@ class Hormiga:
         del self.__Orientation
     #------------------------------------
     
+    #------------------------------------
+    @property
+    def Evaluate(self):
+        # Documentacion de Evaluate 
+        return self.__Evaluate
+    
+    @Evaluate.setter
+    def Evaluate(self,new_Evaluate):
+        self.__Evaluate=new_Evaluate
+    
+    @Evaluate.deleter
+    def Evaluate(self):
+        del self.__Evaluate
+    #------------------------------------
+    
+    def incrementLive(self):
+        self.__Live=self.__Live+1
+        
     def moveForward(self):
+        self.incrementLive()
         if self.Orientation == 'N':
             self.Y_pos=self.Y_pos-1
         elif self.Orientation == 'O':
@@ -167,5 +195,7 @@ class Hormiga:
     def __eq__(self, __o: object) -> bool:
         if isinstance(__o,Hormiga):
             return self.ID==__o.ID
+        elif type(__o)==list:
+            return __o[0]==self.X_pos and __o[1]==self.Y_pos
         elif type(__o)==int:
             return self.ID==__o
